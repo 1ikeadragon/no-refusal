@@ -32,7 +32,7 @@ export default function contribute(client: PluginClientContext) {
     client.addSettingsScreen({
       id: "settings",
       title: "Refusal fallback",
-      icon: "shield-alert",
+      icon: "ShieldAlert",
       Component: SettingsScreen,
     }),
   ];
