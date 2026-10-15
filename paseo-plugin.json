@@ -1,0 +1,10 @@
+{
+  "id": "refusal-fallback",
+  "name": "Refusal fallback",
+  "description": "Retries refused requests on other models, then switches the agent back to its original model.",
+  "media": [],
+  "requirements": {
+    "paseo": ">=0.11.2"
+  },
+  "build": [["npm", "ci", "--omit=dev", "--ignore-scripts"]]
+}
