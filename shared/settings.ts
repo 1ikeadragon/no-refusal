@@ -5,6 +5,7 @@ import { z } from "zod";
 // failed turn's error, or against a short assistant reply.
 export const DEFAULT_PATTERNS = [
   "Provider blocked the response",
+  "Compaction summary was blocked by the provider",
   "violat\\w* (our|the) usage polic",
   "cyber-related safeguards",
   "stop_reason\\W+refusal",
