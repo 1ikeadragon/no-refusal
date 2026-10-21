@@ -8,7 +8,7 @@ Configure it under Settings → Plugins → Refusal fallback:
 - Maximum attempts: total retries across all fallback models for one refusal. The default is 10.
 - Delay between attempts: the wait before each retry after the first.
 - Retry with: either a retry message (default "Continue.", since the refused prompt is already in the conversation) or the last user message resent verbatim.
-- Fallback models: model IDs for each provider, tried in order. The agent's current model is skipped. Leave a provider empty to use its first three other models.
+- Fallback models: model IDs for each provider, tried in order. Add `#` and a thinking option to pick a thinking level, such as `claude-sonnet-5-5#high`. Entries without a thinking option use the model's default. The agent's current model is skipped. The list repeats until a retry succeeds or the attempt limit is reached. Leave a provider empty to use its first three other models.
 - Refusal patterns: case-insensitive regular expressions matched against a failed turn's error, or against a short assistant reply of 800 characters or less. The defaults cover common Anthropic, OpenAI, Azure, and Gemini refusal messages.
 
 The plugin never rewrites prompts. If every model refuses, it stops, switches back, and leaves the request to you. If you send your own message or cancel the turn during a retry, the plugin stops and switches back.

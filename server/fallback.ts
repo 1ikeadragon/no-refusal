@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { PaseoApi } from "@getpaseo/client";
 import type { PluginLifecycleEvents } from "@getpaseo/plugin/server";
 import { NOTE_KIND, type Note } from "../shared/note";
-import type { Preferences } from "../shared/settings";
+import { candidateLabel, parseCandidate, type Candidate, type Preferences } from "../shared/settings";
 import { daemon } from "./daemon";
 import { isRefusal, lastUserMessage, turnPrompt } from "./detect";
 
@@ -47,14 +47,24 @@ async function candidates(
   provider: string,
   cwd: string,
   current: string | null,
-): Promise<string[]> {
+): Promise<Candidate[]> {
   const configured = prefs.fallbackModels[provider];
-  if (configured?.length) return [...new Set(configured)].filter((model) => model !== current);
+  if (configured?.length) {
+    return [...new Set(configured)].map(parseCandidate).filter((entry) => entry.model !== current);
+  }
   const { models } = await paseo.providers.listModels(provider, { cwd });
   return (models ?? [])
     .filter((model) => model.isSelectable !== false && model.id !== current)
     .slice(0, AUTO_FALLBACK_COUNT)
-    .map((model) => model.id);
+    .map((model) => ({ model: model.id, thinking: null }));
+}
+
+async function switchTo(agentId: string, { model, thinking }: Candidate): Promise<void> {
+  const client = await daemon();
+  await client.setAgentModel(agentId, model);
+  // Clear the previous attempt's thinking level when none is specified.
+  // If an explicit level is rejected, skip this attempt rather than silently use another.
+  await client.setAgentThinkingOption(agentId, thinking);
 }
 
 async function restore(
@@ -101,15 +111,16 @@ async function runFallback(event: TurnEnded, paseo: PaseoApi, prefs: Preferences
   try {
     await note(paseo, agentId, {
       level: "info",
-      text: `${originalModel ?? "The model"} refused this request. Retrying on ${models.join(", ")} (up to ${prefs.maxAttempts} attempts), then switching back.`,
+      text: `${originalModel ?? "The model"} refused this request. Retrying on ${models.map(candidateLabel).join(", ")} (up to ${prefs.maxAttempts} attempts), then switching back.`,
     });
 
     for (let attempt = 1; attempt <= prefs.maxAttempts; attempt++) {
-      const model = models[(attempt - 1) % models.length]!;
+      const candidate = models[(attempt - 1) % models.length]!;
+      const model = candidateLabel(candidate);
       if (attempt > 1 && prefs.delayMs > 0) await sleep(prefs.delayMs);
 
       try {
-        await client.setAgentModel(agentId, model);
+        await switchTo(agentId, candidate);
       } catch (error) {
         console.error(`[refusal-fallback] Could not switch to ${model}`, error);
         continue;

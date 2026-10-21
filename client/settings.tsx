@@ -129,7 +129,7 @@ function Editor({
 
       <SettingsSection
         title="Fallback models"
-        info="Comma-separated model IDs, tried in order. The agent's current model is skipped. Leave empty to use the provider's first three other models."
+        info="Comma-separated model IDs, tried in order. Add #thinking to set a thinking level, such as claude-sonnet-5-5#high. The agent's current model is skipped. Leave empty to use the provider's first three other models."
       >
         <SettingsCard>
           {providers.length === 0 ? (
